@@ -1,24 +1,28 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+
+import SingleTownship from '../views/SingleTownship.vue'
+import TownshipDuo from '../views/TownshipDuo.vue'
+import FullCapeCulture from '../views/FullCapeCulture.vue'
+import Success from '../views/Success.vue'
+import Cancel from '../views/Cancel.vue'
+import TourPackages from '../components/TourPackages.vue' // <--- add this import
+import RegisterForm from '../views/RegisterForm.vue'
+import Checkout from '../views/Checkout.vue'
 
 const routes = [
-  {
-    path: '/',
-    name: 'home',
-    component: HomeView
-  },
-  {
-    path: '/about',
-    name: 'about',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/AboutView.vue')
-  }
+ { path: '/', redirect: '/single' },
+  { path: '/single', component: SingleTownship },
+  { path: '/duo', component: TownshipDuo },
+  { path: '/full', component: FullCapeCulture },
+  { path: '/success', component: Success },
+  { path: '/cancel', component: Cancel },
+  { path: '/tours', component: TourPackages },
+  { path: '/register', component: RegisterForm },
+  { path: '/checkout', component: Checkout }
 ]
 
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
+  history: createWebHistory(),
   routes
 })
 
