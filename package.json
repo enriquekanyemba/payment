@@ -1,28 +1,24 @@
 {
-  "name": "stripe-payment",
-  "version": "0.1.0",
-  "private": true,
+  "name": "backend",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
   "scripts": {
-    "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
   "dependencies": {
-    "@stripe/stripe-js": "^7.8.0",
-    "@vue-stripe/vue-stripe": "^4.5.0",
-    "axios": "^1.11.0",
-    "core-js": "^3.8.3",
-    "vue": "^3.2.13",
-    "vue-router": "^4.0.3"
-  },
-  "devDependencies": {
-    "@vue/cli-plugin-babel": "~5.0.0",
-    "@vue/cli-plugin-router": "~5.0.0",
-    "@vue/cli-service": "~5.0.0"
-  },
-  "browserslist": [
-    "> 1%",
-    "last 2 versions",
-    "not dead",
-    "not ie 11"
-  ]
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "mysql2": "^3.14.3",
+    "nodemailer": "^7.0.5",
+    "nodemon": "^3.1.10",
+    "sequelize": "^6.37.7",
+    "stripe": "^18.4.0"
+  }
 }
