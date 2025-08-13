@@ -1,59 +1,60 @@
 <template>
   <div class="checkout">
-    <h2>Complete Payment</h2>
-    <p>Please confirm your package and proceed to payment.</p>
-    <p><strong>Package:</strong> {{ booking?.package || 'No booking found' }}</p>
+    <h2>Booking Confirmation</h2>
 
-    <button :disabled="!booking" @click="handleCheckout">Pay Now</button>
+    <div v-if="loading">Loading...</div>
+
+    <div v-else-if="session">
+      <p><strong>Package:</strong> {{ session.display_items[0].custom.name }}</p>
+      <p><strong>Quantity:</strong> {{ session.display_items[0].quantity }}</p>
+      <p><strong>Total Paid:</strong> R{{ (session.amount_total / 100).toFixed(2) }}</p>
+      <p><strong>Status:</strong> {{ session.payment_status }}</p>
+      <p><strong>Email:</strong> {{ session.customer_email }}</p>
+      <p v-if="session.payment_status === 'paid'" class="success-msg">
+        Payment successful! Thank you for your booking.
+      </p>
+      <p v-else class="error-msg">
+        Payment not completed or pending. Please check your payment.
+      </p>
+    </div>
+
+    <div v-else>
+      <p>No session information found.</p>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { loadStripe } from '@stripe/stripe-js'
 
-// Initialize Stripe
-const stripePromise = loadStripe('pk_test_51Rt7PRCpnBRvaWSUf1MvcSdjYBY1LHk3YaLhXZdpibKGMo4qzru3OxQvWwfPl6LEkGGJAeTM0f5UPoWe8QulkBq000l57EV9Gd')
+const loading = ref(true)
+const session = ref(null)
 
-const booking = ref(null)
+onMounted(async () => {
+  const urlParams = new URLSearchParams(window.location.search)
+  const sessionId = urlParams.get('session_id')
 
-// Map package names to your Stripe price IDs
-const priceMap = {
-  'Single Township Tour': 'price_1RtSxxCpnBRvaWSUfOQgieaI',
-  'Township Duo Tour': 'price_1RtSuKCpnBRvaWSULMnhrj3q',
-  'Full Cape Culture Tour': 'price_1RtT0LCpnBRvaWSUtXLjjCSY'
-}
+  if (!sessionId) {
+    loading.value = false
+    return
+  }
 
-onMounted(() => {
-  const storedBooking = localStorage.getItem('bookingDetails')
-  if (storedBooking) booking.value = JSON.parse(storedBooking)
+  try {
+    // Call your backend API to retrieve session details from Stripe
+    const res = await fetch(`http://localhost:5000/api/checkout-session?sessionId=${sessionId}`)
+    const data = await res.json()
+
+    if (res.ok) {
+      session.value = data.session
+    } else {
+      console.error('Failed to fetch session:', data.error)
+    }
+  } catch (err) {
+    console.error('Error fetching session:', err)
+  } finally {
+    loading.value = false
+  }
 })
-
-const handleCheckout = async () => {
-  if (!booking.value) {
-    alert('No booking info found')
-    return
-  }
-
-  const stripe = await stripePromise
-  const priceId = priceMap[booking.value.package]
-
-  if (!priceId) {
-    alert('Invalid package for payment')
-    return
-  }
-
-  const { error } = await stripe.redirectToCheckout({
-    lineItems: [{ price: priceId, quantity: booking.value.people || 1 }],
-    mode: 'payment',
-    successUrl: 'http://localhost:8080/success',
-    cancelUrl: 'http://localhost:8080/cancel'
-  })
-
-  if (error) {
-    console.error('Stripe error:', error)
-  }
-}
 </script>
 
 <style scoped>
@@ -63,17 +64,14 @@ const handleCheckout = async () => {
   padding: 20px;
   text-align: center;
 }
-button {
-  padding: 10px 20px;
-  background: #2d89ef;
-  border: none;
-  color: white;
+.success-msg {
+  color: green;
   font-weight: bold;
-  cursor: pointer;
   margin-top: 20px;
 }
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.error-msg {
+  color: red;
+  font-weight: bold;
+  margin-top: 20px;
 }
 </style>

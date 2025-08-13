@@ -1,7 +1,7 @@
 <template>
   <div class="booking-form">
     <h2>🏙️ Township Duo Tour</h2>
-    <p>R3000 per person • 2 Townships • 6 hours</p>
+    <p>R3000 per person • Visit 2 townships</p>
     <ul>
       <li>Meals Included</li>
       <li>Taxi Included</li>
@@ -10,39 +10,36 @@
 
     <div class="form-group">
       <label for="people">Number of People:</label>
-      <input type="number" v-model.number="people" min="1" />
+      <input type="number" id="people" v-model.number="people" min="1" />
     </div>
 
-    <div class="form-group">
-      <label>Township 1:</label>
-      <select v-model="township1">
-        <option disabled value="">Select first township</option>
-        <option v-for="town in townships" :key="town">{{ town }}</option>
+    <div
+      class="form-group"
+      v-for="(township, index) in selectedTownships"
+      :key="index"
+    >
+      <label>Select Township {{ index + 1 }}:</label>
+      <select v-model="township.name">
+        <option disabled value="">Choose township</option>
+        <option
+          v-for="town in townships"
+          :key="town"
+          :value="town"
+        >
+          {{ town }}
+        </option>
       </select>
+
+      <label>Select Date:</label>
+      <input type="date" v-model="township.date" :min="minDate" />
     </div>
 
-    <div class="form-group">
-      <label>Pick a Date for Township 1:</label>
-      <input type="date" v-model="date1" :min="minDate" />
-    </div>
-
-    <div class="form-group">
-      <label>Township 2:</label>
-      <select v-model="township2">
-        <option disabled value="">Select second township</option>
-        <option v-for="town in townships" :key="town">{{ town }}</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label>Pick a Date for Township 2:</label>
-      <input type="date" v-model="date2" :min="minDate" />
-    </div>
-
-    <div v-if="date1 && date2 && date1 === date2" class="error-msg">
+    <!-- Only date error now -->
+    <div v-if="dateError" class="error-msg">
       ❌ The two dates must be different.
     </div>
 
+    <!-- Show total -->
     <div class="summary">
       <strong>Total: R{{ total }}</strong>
     </div>
@@ -53,75 +50,79 @@
 
 <script>
 export default {
-  name: 'TownshipDuo',
+  name: "TownshipDuo",
   data() {
     return {
       people: 1,
-      township1: '',
-      township2: '',
-      date1: '',
-      date2: '',
-      townships: ['Bo-Kaap', 'Khayelitsha', 'Mitchell Plain', 'Langa']
+      selectedTownships: [
+        { name: "", date: "" },
+        { name: "", date: "" },
+      ],
+      townships: ["Bo-Kaap", "Khayelitsha", "Mitchells Plain", "Langa"],
+      packageId: 2,
+      packageName: "Township Duo Tour",
+      pricePerPerson: 3000,
     };
   },
   computed: {
-    total() {
-      return this.people * 3000;
-    },
     minDate() {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
-      const yyyy = tomorrow.getFullYear();
-      const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
-      const dd = String(tomorrow.getDate()).padStart(2, '0');
-      return `${yyyy}-${mm}-${dd}`;
+      return tomorrow.toISOString().split("T")[0];
+    },
+    total() {
+      return this.people * this.pricePerPerson;
+    },
+    dateError() {
+      return (
+        this.selectedTownships[0].date &&
+        this.selectedTownships[1].date &&
+        this.selectedTownships[0].date === this.selectedTownships[1].date
+      );
     }
   },
   methods: {
     bookNow() {
-      if (!this.township1 || !this.date1 || !this.township2 || !this.date2) {
-        alert('Please complete both township selections and dates.');
+      if (
+        this.selectedTownships.some((t) => !t.name || !t.date) ||
+        this.people < 1
+      ) {
+        alert("Please fill all township selections and dates.");
         return;
       }
-      if (this.date1 === this.date2) {
-        alert('The two dates must be different.');
-        return;
-      }
-      if (this.date1 < this.minDate || this.date2 < this.minDate) {
-        alert('Please select dates from tomorrow onwards.');
+      if (this.dateError) {
+        alert("The two dates must be different.");
         return;
       }
 
-      localStorage.setItem('bookingDetails', JSON.stringify({
-        package: 'Township Duo Tour',
-        township1: this.township1,
-        date1: this.date1,
-        township2: this.township2,
-        date2: this.date2,
+      const bookingDetails = {
+        packageId: this.packageId,
+        packageName: this.packageName,
         people: this.people,
-        total: this.total
-      }));
+        firstTownship: this.selectedTownships[0].name,
+        firstDate: this.selectedTownships[0].date,
+        secondTownship: this.selectedTownships[1].name,
+        secondDate: this.selectedTownships[1].date,
+        total: this.total,
+      };
 
-      this.$router.push('/register');
-    }
-  }
+      localStorage.setItem("bookingDetails", JSON.stringify(bookingDetails));
+      this.$router.push("/register");
+    },
+  },
 };
 </script>
 
 <style scoped>
 .booking-form {
-  max-width: 500px;
-  margin: auto;
+  max-width: 400px;
+  margin: 20px auto;
   padding: 20px;
+  background: white;
   border-radius: 10px;
-  background: #fff;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 h2 {
   text-align: center;
-}
-ul {
-  padding-left: 20px;
 }
 .form-group {
   margin-bottom: 15px;
@@ -138,25 +139,24 @@ button {
   width: 100%;
   padding: 10px;
   background: #2d89ef;
-  color: #fff;
+  color: white;
   border: none;
   border-radius: 5px;
   font-size: 16px;
   cursor: pointer;
-  margin-top: 10px;
 }
 button:hover {
   background: #1865c1;
 }
 .summary {
   text-align: center;
-  margin: 15px 0;
-  font-size: 18px;
+  font-weight: bold;
+  margin: 20px 0;
 }
 .error-msg {
   color: red;
+  text-align: center;
   font-size: 14px;
   margin-bottom: 10px;
-  text-align: center;
 }
 </style>

@@ -1,112 +1,120 @@
 <template>
-  <div class="form-container">
-    <h2>Tour Booking Form</h2>
-    <form @submit.prevent="submitForm">
+  <form @submit.prevent="submitForm" class="register-form">
+    <h2>Enter Your Details</h2>
+
+    <div class="form-group">
       <input v-model="form.firstName" placeholder="First Name" required />
-      <input v-model="form.lastName" placeholder="Last Name" required />
-      <input v-model="form.email" type="email" placeholder="Email" required />
-
-      <h3>Next of Kin</h3>
-      <input v-model="form.kinName" placeholder="Full Name" required />
-      <input v-model="form.kinContact" placeholder="Contact Number" required />
-      <input v-model="form.kinRelationship" placeholder="Relationship" required />
-
-      <button type="submit">Proceed</button>
-    </form>
-
-    <div class="summary" v-if="booking">
-      <h3>Booking Summary</h3>
-      <p><strong>Package:</strong> {{ booking.package }}</p>
-
-      <template v-if="booking.package === 'Township Duo Tour'">
-        <p><strong>Township 1:</strong> {{ booking.township1 }}</p>
-        <p><strong>Date 1:</strong> {{ booking.date1 }}</p>
-        <p><strong>Township 2:</strong> {{ booking.township2 }}</p>
-        <p><strong>Date 2:</strong> {{ booking.date2 }}</p>
-      </template>
-
-      <template v-else-if="booking.package === 'Full Cape Culture Tour'">
-        <p><strong>Townships:</strong> {{ booking.townships?.join(', ') }}</p>
-        <p><strong>Dates:</strong> {{ booking.dates?.join(', ') }}</p>
-      </template>
-
-      <template v-else>
-        <p><strong>Township:</strong> {{ booking.township }}</p>
-        <p><strong>Date:</strong> {{ booking.date }}</p>
-      </template>
-
-      <p><strong>People:</strong> {{ booking.people }}</p>
-      <p><strong>Total:</strong> R{{ booking.total }}</p>
     </div>
-  </div>
+
+    <div class="form-group">
+      <input v-model="form.lastName" placeholder="Last Name" required />
+    </div>
+
+    <div class="form-group">
+      <input v-model="form.email" type="email" placeholder="Email" required />
+    </div>
+
+    <div class="form-group">
+      <input v-model="form.phone" type="tel" placeholder="Phone Number" required />
+    </div>
+
+    <button :disabled="loading">
+      {{ loading ? 'Processing...' : 'Proceed to Payment' }}
+    </button>
+  </form>
 </template>
 
-<script>
-export default {
-  name: 'RegisterForm',
-  data() {
-    return {
-      form: {
-        firstName: '',
-        lastName: '',
-        email: '',
-        kinName: '',
-        kinContact: '',
-        kinRelationship: ''
-      },
-      booking: null
-    };
-  },
-  mounted() {
-    const storedBooking = localStorage.getItem('bookingDetails');
-    if (storedBooking) {
-      this.booking = JSON.parse(storedBooking);
-    }
-  },
-  methods: {
-    submitForm() {
-      // Save form info along with booking to localStorage
-      localStorage.setItem('userDetails', JSON.stringify(this.form));
+<script setup>
+import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
-      // You can also send to backend here if needed
+const router = useRouter()
+const loading = ref(false)
 
-      this.$router.push('/checkout');  // Go to payment page
+const form = reactive({
+  firstName: '',
+  lastName: '',
+  email: '',
+  phone: '',
+})
+
+const submitForm = async () => {
+  loading.value = true
+
+  try {
+    const bookingDetails = JSON.parse(localStorage.getItem('bookingDetails'))
+    if (!bookingDetails) {
+      alert('No booking found. Please book a tour first.')
+      loading.value = false
+      router.push('/')
+      return
     }
+
+    // Prepare payload to backend
+    const payload = {
+      full_name: `${form.firstName} ${form.lastName}`,
+      email: form.email,
+      phone: form.phone,
+      packageId: bookingDetails.packageId,
+      number_of_people: bookingDetails.people,
+      // optionally, send townships/dates if needed by backend
+      townships: bookingDetails.townships || [bookingDetails.township || bookingDetails.firstTownship || bookingDetails.firstTownship], 
+      dates: bookingDetails.dates || [bookingDetails.date || bookingDetails.firstDate || bookingDetails.date],
+    }
+
+    const res = await fetch('http://localhost:5000/api/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+
+    const data = await res.json()
+
+    if (!res.ok) throw new Error(data.error || 'Booking failed')
+
+    // Save checkout URL or session ID to localStorage
+    localStorage.setItem('checkoutUrl', data.checkoutUrl)
+
+    // Redirect to checkout page or open Stripe checkout page
+    window.location.href = data.checkoutUrl
+  } catch (err) {
+    alert(err.message)
+  } finally {
+    loading.value = false
   }
-};
+}
 </script>
 
 <style scoped>
-.form-container {
-  max-width: 600px;
+.register-form {
+  max-width: 400px;
   margin: auto;
-  padding: 24px;
-  background: #f9f9f9;
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  padding: 20px;
+  text-align: center;
+}
+.form-group {
+  margin-bottom: 15px;
 }
 input {
-  display: block;
   width: 100%;
-  margin-bottom: 12px;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  padding: 8px;
+  margin-top: 5px;
+  box-sizing: border-box;
 }
 button {
-  padding: 10px 20px;
-  background: teal;
+  padding: 10px;
+  background: #2d89ef;
   color: white;
   border: none;
-  border-radius: 6px;
   cursor: pointer;
+  width: 100%;
+  font-weight: bold;
 }
-button:hover {
-  background: #004d4d;
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
-.summary {
-  margin-top: 20px;
-  padding-top: 10px;
-  border-top: 1px solid #ccc;
+button:hover:not(:disabled) {
+  background: #1865c1;
 }
 </style>

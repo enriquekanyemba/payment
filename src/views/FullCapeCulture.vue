@@ -1,5 +1,5 @@
 <template>
-  <div class="package-card booking-form">
+  <div class="booking-form">
     <h2>🌍 Full Cape Culture Tour</h2>
     <p>R6000 total • 4 Days (5 hrs/day)</p>
     <ul>
@@ -8,13 +8,11 @@
       <li>Cultural Activities</li>
     </ul>
 
-    <!-- Number of People -->
     <div class="form-group">
       <label for="people">Number of People:</label>
       <input type="number" id="people" v-model.number="people" min="1" />
     </div>
 
-    <!-- Township and Date Selection -->
     <div
       v-for="(town, index) in selectedTownships"
       :key="index"
@@ -33,11 +31,7 @@
         type="date"
         v-model="town.date"
         :min="minDate"
-        :class="{ 'duplicate-date': isDuplicateDate(town.date, index) }"
       />
-      <small v-if="isDuplicateDate(town.date, index)" class="error">
-        This date has already been selected.
-      </small>
     </div>
 
     <button
@@ -58,28 +52,30 @@
 
 <script>
 export default {
-  name: "FullCapeCultureTour",
+  name: "FullCapeCulture",
   data() {
     return {
       people: 1,
       selectedTownships: [
         { name: "", date: "" },
         { name: "", date: "" },
+        { name: "", date: "" },
+        { name: "", date: "" },
       ],
-      townships: ["Bo-Kaap", "Khayelitsha", "Mitchell Plain", "Langa"],
+      townships: ["Bo-Kaap", "Khayelitsha", "Mitchells Plain", "Langa"],
+      packageId: 3,
+      packageName: "Full Cape Culture Tour",
+      pricePerPerson: 6000,
     };
   },
   computed: {
     total() {
-      return 6000 * this.people;
+      return this.pricePerPerson * this.people;
     },
     minDate() {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
-      const yyyy = tomorrow.getFullYear();
-      const mm = String(tomorrow.getMonth() + 1).padStart(2, "0");
-      const dd = String(tomorrow.getDate()).padStart(2, "0");
-      return `${yyyy}-${mm}-${dd}`;
+      return tomorrow.toISOString().split("T")[0];
     },
   },
   methods: {
@@ -88,47 +84,26 @@ export default {
         this.selectedTownships.push({ name: "", date: "" });
       }
     },
-    isDuplicateDate(date, index) {
-      return (
-        date !== "" &&
-        this.selectedTownships.some((t, i) => t.date === date && i !== index)
-      );
-    },
     bookNow() {
-      if (this.selectedTownships.length !== 4) {
-        alert("Please select exactly 4 townships.");
-        return;
-      }
-
-      if (this.selectedTownships.some((t) => !t.name || !t.date)) {
-        alert("Please fill in all townships and their dates.");
-        return;
-      }
-
       if (
-        this.selectedTownships.some(
-          (t, i) => this.isDuplicateDate(t.date, i)
-        )
+        this.selectedTownships.some((t) => !t.name || !t.date) ||
+        this.people < 1
       ) {
-        alert("Please make sure each township is booked on a unique date.");
+        alert("Please fill all township selections and dates.");
         return;
       }
 
-      if (
-        this.selectedTownships.some(
-          (t) => t.date < this.minDate
-        )
-      ) {
-        alert("Please select dates from tomorrow onwards.");
-        return;
-      }
+      // Optionally validate duplicate dates or same township here
+
+      const totalPrice = this.pricePerPerson * this.people;
 
       const bookingDetails = {
-        package: "Full Cape Culture Tour",
+        packageId: this.packageId,
+        packageName: this.packageName,
         people: this.people,
         townships: this.selectedTownships.map((t) => t.name),
         dates: this.selectedTownships.map((t) => t.date),
-        total: this.total,
+        total: totalPrice,
       };
 
       localStorage.setItem("bookingDetails", JSON.stringify(bookingDetails));
@@ -140,19 +115,14 @@ export default {
 
 <style scoped>
 .booking-form {
-  max-width: 100%;
-  margin: 0 auto;
+  max-width: 500px;
+  margin: 20px auto;
   padding: 20px;
+  background: white;
   border-radius: 10px;
-  background: #fff;
-  box-shadow: none;
 }
 h2 {
   text-align: center;
-}
-ul {
-  padding-left: 20px;
-  margin-bottom: 15px;
 }
 .form-group {
   margin-bottom: 15px;
@@ -176,28 +146,25 @@ button {
   width: 100%;
   padding: 10px;
   background: #2d89ef;
-  color: #fff;
+  color: white;
   border: none;
   border-radius: 5px;
   font-size: 16px;
   cursor: pointer;
-  margin-top: 10px;
 }
 button:hover {
   background: #1865c1;
 }
-.summary {
-  text-align: center;
-  margin: 15px 0;
-  font-size: 18px;
-}
 .add-township-btn {
-  width: auto;
-  padding: 8px 16px;
-  margin-top: 10px;
   background: #4caf50;
+  margin-bottom: 10px;
 }
 .add-township-btn:hover {
   background: #3a8b38;
+}
+.summary {
+  text-align: center;
+  font-weight: bold;
+  margin: 20px 0;
 }
 </style>
