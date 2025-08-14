@@ -21,8 +21,8 @@ const sequelize = new Sequelize(
 );
 
 sequelize.authenticate()
-  .then(() => console.log('✅ Database connected successfully.'))
-  .catch(err => console.error('❌ Unable to connect to DB:', err));
+  .then(() => console.log(' Database connected successfully.'))
+  .catch(err => console.error(' Unable to connect to DB:', err));
 
 const Customer = CustomerModel(sequelize, DataTypes);
 const Township = TownshipModel(sequelize, DataTypes);

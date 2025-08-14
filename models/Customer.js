@@ -1,4 +1,3 @@
-// models/Customer.js
 export default (sequelize, DataTypes) => {
   return sequelize.define('Customer', {
     customerId: {
@@ -7,7 +6,7 @@ export default (sequelize, DataTypes) => {
       autoIncrement: true,
     },
     name: { type: DataTypes.STRING, allowNull: false },
-    email: { type: DataTypes.STRING, unique: true, allowNull: false },
+    email: { type: DataTypes.STRING, allowNull: false }, // remove unique for now
     cell: DataTypes.STRING,
   }, {
     timestamps: true,
